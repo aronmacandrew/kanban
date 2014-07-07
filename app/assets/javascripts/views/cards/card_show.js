@@ -12,6 +12,46 @@ Kanban.Views.CardShow = Backbone.View.extend({
 
   events: {
     "submit form#add_comment": "addComment",
+    "submit form#set_description": "setDescription",
+  },
+
+  setDescription: function ( event ) {
+    event.preventDefault();
+    var that = this,
+        card = that.model,
+        $form = $(event.target),
+        attrs = $form.serializeJSON();
+
+    $form[0].reset();
+    if (!attrs.card_description.content) {
+      that.$el.effect("shake", {
+        distance: 9,
+        times: 2,
+        complete: function () {
+          $textarea = that.$el.find(".card_description_content");
+          $textarea.focus();
+        }
+      }, 350);
+      return;
+    }
+
+    card.attributes.description = attrs.card_description.content;
+
+    card.save({
+      success: function(response) {
+        var card = comments.card;
+        var comments_count = +card.get("comments_count");
+        card.set({ comments_count: comments_count + 1 });
+
+        _.defer(function () {
+          $("ul.card_comments li:first-child").addClass("animated fadeIn");
+        });
+
+        // trigger card re-render
+        card.get("list").trigger("change");
+        // card.collection.trigger("change"); // FIXME: this fails inconsistently (?)
+      }
+    })
   },
 
   addComment: function (event) {
